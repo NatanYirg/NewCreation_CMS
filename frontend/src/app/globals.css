@@ -1,0 +1,36 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+/* Table row hover effect */
+.ant-table tbody tr {
+  cursor: pointer;
+}
+
+/* Popconfirm - larger and more visible */
+.ant-popover-inner {
+  min-width: 280px !important;
+  padding: 16px !important;
+}
+
+.ant-popover-message-title {
+  font-size: 15px !important;
+}
+
+.ant-popover-buttons {
+  margin-top: 12px !important;
+}
+
+.ant-popover-buttons .ant-btn {
+  height: 32px !important;
+  padding: 0 16px !important;
+  font-size: 14px !important;
+}

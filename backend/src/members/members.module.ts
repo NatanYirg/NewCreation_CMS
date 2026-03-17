@@ -1,0 +1,12 @@
+// backend/src/members/members.module.ts
+import { Module } from '@nestjs/common';
+import { MembersService } from './members.service';
+import { MembersController } from './members.controller';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Module({
+  controllers: [MembersController],
+  providers: [MembersService, PrismaService],
+  exports: [MembersService],
+})
+export class MembersModule {}
