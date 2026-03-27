@@ -11,7 +11,8 @@ export const api = axios.create({
 
 // Members API
 export const membersAPI = {
-  getAll: () => api.get('/members'),
+  getAll: (params?: { status?: string; type?: string }) =>
+    api.get('/members', { params }),
   getById: (id: number) => api.get(`/members/${id}`),
   create: (data: FormData) => api.post('/members', data, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -36,14 +37,30 @@ export const foundationClassesAPI = {
 
 // Foundation Class Members API
 export const foundationClassMembersAPI = {
+  // Assign (or re-assign) a member to a class — handles transfer automatically
   assign: (memberId: number, foundationClassId: number) =>
     api.post('/foundation-class-members/assign', { memberId, foundationClassId }),
-  getClassMembers: (classId: number) =>
-    api.get(`/foundation-class-members/ListAll/${classId}`),
+  // Bulk assign many members to a class at once
+  bulkAssign: (foundationClassId: number, memberIds: number[]) =>
+    api.post('/foundation-class-members/bulk-assign', { foundationClassId, memberIds }),
+  // Explicit transfer to a new class
+  transfer: (memberId: number, foundationClassId: number) =>
+    api.patch(`/foundation-class-members/transfer/${memberId}`, { foundationClassId }),
+  // Get current active class for a member
   getMemberClass: (memberId: number) =>
-    api.get(`/foundation-class-members/GetMember/${memberId}`),
+    api.get(`/foundation-class-members/member/${memberId}`),
+  // Get full class history for a member
+  getMemberClassHistory: (memberId: number) =>
+    api.get(`/foundation-class-members/member/${memberId}/history`),
+  // List active members in a class
+  getClassMembers: (classId: number) =>
+    api.get(`/foundation-class-members/class/${classId}`),
+  // Remove member from their current class
   remove: (memberId: number) =>
     api.delete(`/foundation-class-members/member/${memberId}`),
+  // Members with no foundation class (children, youth, unassigned)
+  getUnassigned: () =>
+    api.get('/foundation-class-members/unassigned'),
 };
 
 // Attendance API
@@ -83,9 +100,9 @@ export const titheAPI = {
   getMemberTithes: (memberId: number) =>
     api.get(`/tithe/member/${memberId}`),
   getMonthlyStats: (year: number, month: number) =>
-    api.get(`/tithe/analytics/monthly?year=${year}&month=${month}`),
+    api.get('/tithe/analytics/monthly', { params: { year, month } }),
   getYearlyStats: (year: number) =>
-    api.get(`/tithe/analytics/yearly?year=${year}`),
+    api.get('/tithe/analytics/yearly', { params: { year } }),
 };
 
 // Dashboard API

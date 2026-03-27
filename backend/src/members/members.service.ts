@@ -15,7 +15,7 @@ export class MembersService {
   async findAll() {
     return this.prisma.member.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { foundationClasses: { include: { foundationClass: true } } },
+      include: { foundationClasses: { where: { isActive: true }, include: { foundationClass: true } } },
     });
   }
 
@@ -23,7 +23,7 @@ export class MembersService {
     const member = await this.prisma.member.findUnique({
       where: { id },
       include: {
-        foundationClasses: { include: { foundationClass: true } },
+        foundationClasses: { where: { isActive: true }, include: { foundationClass: true } },
         departmentMemberships: { include: { department: true } },
       },
     });

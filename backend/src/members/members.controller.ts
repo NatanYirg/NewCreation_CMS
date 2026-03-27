@@ -20,23 +20,35 @@ export class MembersController {
     @Body() body: Record<string, string>,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    const required = ['firstName', 'lastName', 'phone', 'email', 'age', 'gender', 'address', 'status'];
+    const required = ['firstName', 'middleName', 'lastName', 'phone'];
     for (const field of required) {
       if (!body[field]) throw new BadRequestException(`${field} is required`);
     }
-    if (!file) throw new BadRequestException('photo is required');
 
     const dto: CreateMemberDto = {
       firstName: body.firstName,
+      middleName: body.middleName,
       lastName: body.lastName,
-      phone: body.phone,
-      email: body.email,
-      age: Number(body.age),
       gender: body.gender as any,
-      address: body.address,
-      status: body.status as any,
-      photo: `/uploads/members/${file.filename}`,
+      birthDate: body.birthDate ? new Date(body.birthDate) : undefined,
+      phone: body.phone,
+      alternativePhone: body.alternativePhone || undefined,
+      email: body.email || undefined,
+      city: body.city || undefined,
+      subCity: body.subCity || undefined,
+      woreda: body.woreda || undefined,
+      houseNumber: body.houseNumber || undefined,
+      joinedDate: body.joinedDate ? new Date(body.joinedDate) : undefined,
+      salvationDate: body.salvationDate ? new Date(body.salvationDate) : undefined,
+      baptismStatus: body.baptismStatus as any,
+      status: (body.status as any) || 'ACTIVE',
+      inactiveReason: body.inactiveReason || undefined,
+      maritalStatus: body.maritalStatus as any,
+      previousChurch: body.previousChurch || undefined,
+      notes: body.notes || undefined,
+      photo: file ? `/uploads/members/${file.filename}` : undefined,
     };
+
     return this.membersService.create(dto);
   }
 
@@ -59,18 +71,31 @@ export class MembersController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     const dto: UpdateMemberDto = {
-      firstName: body.firstName,
-      lastName: body.lastName,
-      phone: body.phone,
-      email: body.email,
-      age: body.age ? Number(body.age) : undefined,
+      firstName: body.firstName || undefined,
+      middleName: body.middleName || undefined,
+      lastName: body.lastName || undefined,
       gender: body.gender as any,
-      address: body.address,
+      birthDate: body.birthDate ? new Date(body.birthDate) : undefined,
+      phone: body.phone || undefined,
+      alternativePhone: body.alternativePhone || undefined,
+      email: body.email || undefined,
+      city: body.city || undefined,
+      subCity: body.subCity || undefined,
+      woreda: body.woreda || undefined,
+      houseNumber: body.houseNumber || undefined,
+      joinedDate: body.joinedDate ? new Date(body.joinedDate) : undefined,
+      salvationDate: body.salvationDate ? new Date(body.salvationDate) : undefined,
+      baptismStatus: body.baptismStatus as any,
       status: body.status as any,
+      inactiveReason: body.inactiveReason || undefined,
+      maritalStatus: body.maritalStatus as any,
+      previousChurch: body.previousChurch || undefined,
+      notes: body.notes || undefined,
       photo: file ? `/uploads/members/${file.filename}` : undefined,
     };
-    // Remove undefined keys so we don't overwrite existing values
-    Object.keys(dto).forEach((k) => dto[k] === undefined && delete dto[k]);
+
+    // Strip undefined so we don't overwrite existing values
+    Object.keys(dto).forEach((k) => (dto as any)[k] === undefined && delete (dto as any)[k]);
     return this.membersService.update(id, dto);
   }
 

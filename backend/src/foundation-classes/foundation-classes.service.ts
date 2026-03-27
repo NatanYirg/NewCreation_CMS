@@ -1,47 +1,36 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+
+interface ClassDto { name: string; level: number; }
 
 @Injectable()
 export class FoundationClassesService {
   constructor(private prisma: PrismaService) {}
 
-  create(data: any) {
-    return this.prisma.foundationClass.create({
-      data,
-    });
+  create(data: ClassDto) {
+    return this.prisma.foundationClass.create({ data });
   }
 
   findAll() {
     return this.prisma.foundationClass.findMany({
-      include: {
-        members: true,
-        leaders: true,
-        teachers: true,
-      },
+      include: { members: true, leaders: true, teachers: true },
     });
   }
 
-  findOne(id: number) {
-    return this.prisma.foundationClass.findUnique({
+  async findOne(id: number) {
+    const cls = await this.prisma.foundationClass.findUnique({
       where: { id },
-      include: {
-        members: true,
-        leaders: true,
-        teachers: true,
-      },
+      include: { members: true, leaders: true, teachers: true },
     });
+    if (!cls) throw new NotFoundException(`Foundation class #${id} not found`);
+    return cls;
   }
 
-  update(id: number, data: any) {
-    return this.prisma.foundationClass.update({
-      where: { id },
-      data,
-    });
+  update(id: number, data: Partial<ClassDto>) {
+    return this.prisma.foundationClass.update({ where: { id }, data });
   }
 
   remove(id: number) {
-    return this.prisma.foundationClass.delete({
-      where: { id },
-    });
+    return this.prisma.foundationClass.delete({ where: { id } });
   }
 }

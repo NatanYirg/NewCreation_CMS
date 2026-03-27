@@ -88,7 +88,7 @@ export class AttendanceService {
       include: {
         foundationClass: {
           include: {
-            members: { include: { member: true } },
+            members: { where: { isActive: true }, include: { member: true } },
           },
         },
         attendances: true,
