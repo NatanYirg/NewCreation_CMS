@@ -46,50 +46,91 @@ enum Gender {
 enum MemberStatus {
   ACTIVE
   INACTIVE
+  LEFT
   DECEASED
-  LEFT_CHURCH
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  SEPARATED
+}
+
+enum BaptismStatus {
+  BAPTIZED
+  NOT_BAPTIZED
 }
 
 model Member {
   id        Int     @id @default(autoincrement())
-  firstName String
-  lastName  String
-  phone     String  @unique
-  email     String?
-  age       Int?
-  gender    Gender?
-  address   String?
-  photo     String? // URL or file path
 
+  // Name
+  firstName  String
+  middleName String
+  lastName   String
+
+  // Personal
+  gender    Gender?
+  birthDate DateTime? @db.Date
+
+  // Contact
+  phone            String  @unique
+  alternativePhone String?
+  email            String?
+
+  // Address
+  city        String?
+  subCity     String?
+  woreda      String?
+  houseNumber String?
+
+  // Church lifecycle
+  joinedDate    DateTime? @db.Date
+  salvationDate DateTime? @db.Date
+
+  // Baptism quick status
+  baptismStatus BaptismStatus @default(NOT_BAPTIZED)
+
+  // Status
   status         MemberStatus @default(ACTIVE)
-  inactiveReason String?      // Reason when status is not ACTIVE
+  inactiveReason String?
+
+  // Marital
+  maritalStatus MaritalStatus?
+
+  // Background
+  previousChurch String?
+
+  // Notes
+  notes String?
+
+  // Photo
+  photo String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   users User[]
 
-  // FoundationClass relations
   foundationClasses  FoundationClassMember[]
   foundationLeaders  FoundationClassLeader[]
   foundationTeachers FoundationClassTeacher[]
 
-  // Department relations
   departmentMemberships DepartmentMember[]
   departmentLeaderships DepartmentLeader[]
 
-  // Attendance
   attendances Attendance[]
+  baptisms    BaptismMember[]
 
-  // Baptism
-  baptisms BaptismMember[]
-
-  // Family relationships
   familyRelationships1 FamilyRelationship[] @relation("FamilyRelationships1")
   familyRelationships2 FamilyRelationship[] @relation("FamilyRelationships2")
 
-  // Tithe
   tithes Tithe[]
+
+  @@index([status])
+  @@index([phone])
+  @@index([firstName, middleName, lastName])
 }
 
 // -----------------------------
@@ -109,14 +150,20 @@ model FoundationClass {
 }
 
 // Pivot table: member ↔ foundation class
+// memberId is NOT unique — a member can have history across multiple classes
 model FoundationClassMember {
-  id                Int      @id @default(autoincrement())
-  memberId          Int      @unique
+  id                Int       @id @default(autoincrement())
+  memberId          Int
   foundationClassId Int
-  joinedAt          DateTime @default(now())
+  isActive          Boolean   @default(true)  // true = current class
+  joinedAt          DateTime  @default(now())
+  leftAt            DateTime?                 // set when transferred or removed
 
   member          Member          @relation(fields: [memberId], references: [id])
   foundationClass FoundationClass @relation(fields: [foundationClassId], references: [id])
+
+  @@index([memberId])
+  @@index([foundationClassId])
 }
 
 // Leaders for foundation class

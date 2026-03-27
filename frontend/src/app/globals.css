@@ -1,36 +1,385 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
   width: 100%;
   height: 100%;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: hsl(210, 20%, 98%);
+  color: hsl(220, 20%, 10%);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Table row hover effect */
-.ant-table tbody tr {
-  cursor: pointer;
+/* ── Sidebar overrides ── */
+.app-sider {
+  background: hsl(220, 20%, 10%) !important;
+  border-right: none !important;
 }
 
-/* Popconfirm - larger and more visible */
-.ant-popover-inner {
-  min-width: 280px !important;
-  padding: 16px !important;
+.app-sider .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
 }
 
-.ant-popover-message-title {
+/* Sidebar logo area */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px;
+  border-bottom: 1px solid hsl(220, 16%, 18%);
+  flex-shrink: 0;
+}
+
+.sidebar-logo-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: hsl(199, 89%, 48%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 16px;
+}
+
+.sidebar-logo-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-logo-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: hsl(210, 14%, 93%);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.sidebar-logo-sub {
+  font-size: 10px;
+  color: hsl(220, 12%, 40%);
+  white-space: nowrap;
+}
+
+/* Sidebar nav group labels */
+.sidebar-group-label {
+  padding: 16px 16px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: hsl(220, 12%, 40%);
+}
+
+/* Ant Menu inside sidebar */
+.app-sider .ant-menu {
+  background: transparent !important;
+  border-inline-end: none !important;
+  padding: 0 8px;
+}
+
+.app-sider .ant-menu-item {
+  border-radius: 8px !important;
+  margin: 2px 0 !important;
+  height: 38px !important;
+  line-height: 38px !important;
+  color: hsl(210, 14%, 83%) !important;
+  font-size: 13px !important;
+}
+
+.app-sider .ant-menu-item:hover {
+  background: hsl(220, 18%, 16%) !important;
+  color: hsl(210, 14%, 93%) !important;
+}
+
+.app-sider .ant-menu-item-selected {
+  background: hsl(220, 18%, 16%) !important;
+  color: hsl(199, 89%, 48%) !important;
+  font-weight: 500 !important;
+}
+
+.app-sider .ant-menu-item .anticon {
   font-size: 15px !important;
 }
 
-.ant-popover-buttons {
-  margin-top: 12px !important;
+.app-sider .ant-menu-item-selected .anticon {
+  color: hsl(199, 89%, 48%) !important;
 }
 
-.ant-popover-buttons .ant-btn {
-  height: 32px !important;
+/* ── Header overrides ── */
+.app-header {
+  background: #fff !important;
+  border-bottom: 1px solid hsl(214, 20%, 90%) !important;
   padding: 0 16px !important;
+  height: 56px !important;
+  line-height: 56px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.header-search .ant-input-affix-wrapper {
+  background: hsl(210, 18%, 95%) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  height: 36px !important;
+  width: 256px !important;
+}
+
+.header-search .ant-input-affix-wrapper:focus-within {
+  box-shadow: 0 0 0 2px hsl(199, 89%, 36%, 0.2) !important;
+}
+
+.header-search .ant-input {
+  background: transparent !important;
+  font-size: 13px !important;
+}
+
+.header-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: hsl(199, 89%, 36%, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: hsl(199, 89%, 36%);
+}
+
+/* ── Content area ── */
+.app-content {
+  background: hsl(210, 20%, 98%) !important;
+  padding: 24px !important;
+  overflow: auto !important;
+}
+
+/* ── Page header ── */
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: hsl(220, 20%, 10%);
+  line-height: 1.3;
+}
+
+.page-description {
+  font-size: 13px;
+  color: hsl(220, 10%, 46%);
+  margin-top: 2px;
+}
+
+/* ── Stat cards ── */
+.stat-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid hsl(214, 20%, 90%);
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* ── Cards ── */
+.ant-card {
+  border-radius: 12px !important;
+  border-color: hsl(214, 20%, 90%) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+}
+
+.ant-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+
+.ant-card-head {
+  border-bottom-color: hsl(214, 20%, 90%) !important;
   font-size: 14px !important;
+  font-weight: 600 !important;
+  min-height: 48px !important;
+}
+
+/* ── Tables ── */
+.ant-table {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  border: 1px solid hsl(214, 20%, 90%) !important;
+}
+
+.ant-table-thead > tr > th {
+  background: #fff !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: hsl(220, 10%, 46%) !important;
+  border-bottom: 1px solid hsl(214, 20%, 90%) !important;
+  padding: 12px 16px !important;
+}
+
+.ant-table-tbody > tr > td {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid hsl(214, 20%, 90%, 0.5) !important;
+  font-size: 13px !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: hsl(210, 18%, 97%) !important;
+}
+
+.ant-table-tbody > tr:last-child > td {
+  border-bottom: none !important;
+}
+
+/* ── Buttons ── */
+.ant-btn-primary {
+  background: hsl(199, 89%, 36%) !important;
+  border-color: hsl(199, 89%, 36%) !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  height: 36px !important;
+}
+
+.ant-btn-primary:hover {
+  background: hsl(199, 89%, 30%) !important;
+  border-color: hsl(199, 89%, 30%) !important;
+}
+
+.ant-btn-default {
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  height: 36px !important;
+}
+
+.ant-btn-sm {
+  height: 28px !important;
+  font-size: 12px !important;
+}
+
+/* ── Tags / Badges ── */
+.ant-tag {
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  padding: 1px 8px !important;
+  border: 1px solid transparent !important;
+}
+
+/* Status colors matching React version */
+.tag-active {
+  background: hsl(142, 71%, 40%, 0.1) !important;
+  color: hsl(142, 71%, 35%) !important;
+  border-color: hsl(142, 71%, 40%, 0.3) !important;
+}
+
+.tag-inactive {
+  background: hsl(0, 72%, 51%, 0.1) !important;
+  color: hsl(0, 72%, 45%) !important;
+  border-color: hsl(0, 72%, 51%, 0.3) !important;
+}
+
+.tag-left, .tag-deceased {
+  background: hsl(210, 14%, 93%) !important;
+  color: hsl(220, 10%, 46%) !important;
+  border-color: hsl(220, 10%, 46%, 0.3) !important;
+}
+
+.tag-adult {
+  background: hsl(210, 18%, 95%) !important;
+  color: hsl(220, 20%, 30%) !important;
+}
+
+.tag-youth {
+  background: hsl(262, 60%, 55%, 0.1) !important;
+  color: hsl(262, 60%, 45%) !important;
+}
+
+.tag-child {
+  background: hsl(38, 92%, 50%, 0.1) !important;
+  color: hsl(38, 92%, 35%) !important;
+}
+
+/* ── Inputs ── */
+.ant-input, .ant-input-affix-wrapper, .ant-select-selector, .ant-picker {
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  border-color: hsl(214, 20%, 90%) !important;
+}
+
+.ant-input:focus, .ant-input-affix-wrapper-focused,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
+  border-color: hsl(199, 89%, 36%) !important;
+  box-shadow: 0 0 0 2px hsl(199, 89%, 36%, 0.15) !important;
+}
+
+/* ── Modals ── */
+.ant-modal-content {
+  border-radius: 12px !important;
+  padding: 24px !important;
+}
+
+.ant-modal-header {
+  border-bottom: 1px solid hsl(214, 20%, 90%) !important;
+  padding-bottom: 16px !important;
+  margin-bottom: 20px !important;
+}
+
+.ant-modal-title {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+/* ── Drawer ── */
+.ant-drawer-header {
+  border-bottom: 1px solid hsl(214, 20%, 90%) !important;
+}
+
+.ant-drawer-title {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+/* ── Descriptions ── */
+.ant-descriptions-item-label {
+  font-size: 11px !important;
+  color: hsl(220, 10%, 46%) !important;
+  font-weight: 500 !important;
+}
+
+.ant-descriptions-item-content {
+  font-size: 13px !important;
+}
+
+/* ── Collapse trigger button ── */
+.sidebar-trigger {
+  background: transparent !important;
+  border: none !important;
+  color: hsl(220, 10%, 46%) !important;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.sidebar-trigger:hover {
+  color: hsl(220, 20%, 10%) !important;
+  background: hsl(210, 18%, 95%) !important;
 }

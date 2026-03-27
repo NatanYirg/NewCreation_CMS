@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Card, Spin, Alert, Button, Table, Tabs, Modal, Form, Select, message, Avatar, Drawer, Descriptions, Input, Space, App } from 'antd';
+import { Card, Spin, Alert, Button, Table, Tabs, Modal, Form, Select, message, Avatar, Drawer, Descriptions, Input, Space, App, Checkbox, Tag, Badge } from 'antd';
 import { ArrowLeftOutlined, UserAddOutlined, UserDeleteOutlined, UserOutlined, SearchOutlined } from '@ant-design/icons';
-import { api, foundationClassesAPI } from '@/lib/api';
+import { api, foundationClassesAPI, foundationClassMembersAPI } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 interface FoundationClass { id: number; name: string; level: number; }
 interface ClassMember { id: number; memberId: number; member: { id: number; firstName: string; lastName: string; photo?: string; phone?: string; email?: string; }; }
 interface ClassLeader { id: number; memberId: number; isMainLeader: boolean; member: { id: number; firstName: string; lastName: string; photo?: string; }; }
+interface AllMember { id: number; firstName: string; lastName: string; memberType: string; foundationClasses: { isActive: boolean; foundationClass: { name: string } }[]; }
 
 export default function FoundationClassDetails() {
   const { modal, message: msg } = App.useApp();
@@ -24,7 +25,9 @@ export default function FoundationClassDetails() {
   const [leaders, setLeaders] = useState<ClassLeader[]>([]);
   const [filteredLeaders, setFilteredLeaders] = useState<ClassLeader[]>([]);
   const [leaderSearch, setLeaderSearch] = useState('');
-  const [allMembers, setAllMembers] = useState<{ label: string; value: number }[]>([]);
+  const [allMembers, setAllMembers] = useState<AllMember[]>([]);
+  const [bulkSelected, setBulkSelected] = useState<number[]>([]);
+  const [bulkSearch, setBulkSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
@@ -46,7 +49,7 @@ export default function FoundationClassDetails() {
       setLoading(true);
       const [classRes, membersRes, leadersRes, allMembersRes, sessionsRes] = await Promise.all([
         foundationClassesAPI.getById(classId),
-        api.get(`/foundation-class-members/ListAll/${classId}`),
+        api.get(`/foundation-class-members/class/${classId}`),
         api.get(`/foundation-class-leaders/GetLeader/${classId}`),
         api.get('/members'),
         api.get(`/attendance/sessions/class/${classId}`),
@@ -56,7 +59,7 @@ export default function FoundationClassDetails() {
       setFilteredMembers(membersRes.data);
       setLeaders(leadersRes.data);
       setFilteredLeaders(leadersRes.data);
-      setAllMembers(allMembersRes.data.map((m: any) => ({ label: `${m.firstName} ${m.lastName}`, value: m.id })));
+      setAllMembers(allMembersRes.data);
 
       // Filter sessions to current ISO week (Mon–Sun)
       const now = new Date();
@@ -88,14 +91,16 @@ export default function FoundationClassDetails() {
     setFilteredLeaders(leaders.filter((r) => `${r.member.firstName} ${r.member.lastName}`.toLowerCase().includes(q)));
   };
 
-  const handleAddMember = async (values: any) => {
+  const handleAddMember = async () => {
+    if (bulkSelected.length === 0) { msg.warning('Select at least one member'); return; }
     try {
-      await api.post('/foundation-class-members/assign', { memberId: values.memberId, foundationClassId: classId });
+      const res = await foundationClassMembersAPI.bulkAssign(classId, bulkSelected);
       setIsAddMemberModalOpen(false);
-      form.resetFields();
-      msg.success('Member added to class');
+      setBulkSelected([]);
+      setBulkSearch('');
+      msg.success(`${res.data.assigned} member(s) added to class`);
       fetchData();
-    } catch { msg.error('Failed to add member'); }
+    } catch { msg.error('Failed to add members'); }
   };
 
   const handleAddLeader = async (values: any) => {
@@ -109,7 +114,7 @@ export default function FoundationClassDetails() {
   };
 
   const handleRemoveMember = (memberId: number) => {
-    modal.confirm({ title: 'Remove member from class?', centered: true, onOk: async () => { await api.delete(`/foundation-class-members/DeleteMember/${memberId}`); msg.success('Member removed'); fetchData(); } });
+    modal.confirm({ title: 'Remove member from class?', centered: true, onOk: async () => { await api.delete(`/foundation-class-members/member/${memberId}`); msg.success('Member removed'); fetchData(); } });
   };
 
   const handleRemoveLeader = (leaderId: number) => {
@@ -197,10 +202,65 @@ export default function FoundationClassDetails() {
         ]} />
       </Card>
 
-      <Modal title="Add Member to Class" open={isAddMemberModalOpen} onOk={() => form.submit()} onCancel={() => setIsAddMemberModalOpen(false)}>
-        <Form form={form} layout="vertical" onFinish={handleAddMember}>
-          <Form.Item label="Select Member" name="memberId" rules={[{ required: true }]}><Select placeholder="Choose a member" options={allMembers} showSearch optionFilterProp="label" /></Form.Item>
-        </Form>
+      <Modal
+        title={`Add Members to Class (${bulkSelected.length} selected)`}
+        open={isAddMemberModalOpen}
+        onOk={handleAddMember}
+        onCancel={() => { setIsAddMemberModalOpen(false); setBulkSelected([]); setBulkSearch(''); }}
+        okText={`Add ${bulkSelected.length > 0 ? `(${bulkSelected.length})` : ''}`}
+        width={560}
+      >
+        <Input
+          placeholder="Search members..."
+          prefix={<SearchOutlined />}
+          value={bulkSearch}
+          onChange={(e) => setBulkSearch(e.target.value)}
+          style={{ marginBottom: 12 }}
+          allowClear
+        />
+        <div style={{ maxHeight: 400, overflowY: 'auto', border: '1px solid #f0f0f0', borderRadius: 6 }}>
+          {allMembers
+            .filter((m) => `${m.firstName} ${m.lastName}`.toLowerCase().includes(bulkSearch.toLowerCase()))
+            .map((m) => {
+              const activeClass = m.foundationClasses?.find((fc) => fc.isActive);
+              const alreadyInThisClass = members.some((cm) => cm.memberId === m.id);
+              return (
+                <div
+                  key={m.id}
+                  onClick={() => {
+                    if (alreadyInThisClass) return;
+                    setBulkSelected((prev) =>
+                      prev.includes(m.id) ? prev.filter((id) => id !== m.id) : [...prev, m.id]
+                    );
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+                    cursor: alreadyInThisClass ? 'not-allowed' : 'pointer',
+                    background: alreadyInThisClass ? '#fafafa' : bulkSelected.includes(m.id) ? '#e6f4ff' : 'white',
+                    borderBottom: '1px solid #f0f0f0',
+                    opacity: alreadyInThisClass ? 0.5 : 1,
+                  }}
+                >
+                  <Checkbox checked={bulkSelected.includes(m.id)} disabled={alreadyInThisClass} />
+                  <Avatar size={28} icon={<UserOutlined />} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 500 }}>{m.firstName} {m.lastName}</div>
+                    {activeClass && (
+                      <div style={{ fontSize: 11, color: '#888' }}>Currently: {activeClass.foundationClass.name}</div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {m.memberType === 'CHILD' && <Tag color="orange" style={{ fontSize: 10 }}>Child</Tag>}
+                    {m.memberType === 'YOUTH' && <Tag color="purple" style={{ fontSize: 10 }}>Youth</Tag>}
+                    {alreadyInThisClass && <Tag color="green" style={{ fontSize: 10 }}>In class</Tag>}
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+        <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
+          Members already in another class will be transferred. Members already in this class are disabled.
+        </div>
       </Modal>
 
       <Modal title="Add Leader to Class" open={isAddLeaderModalOpen} onOk={() => leaderForm.submit()} onCancel={() => setIsAddLeaderModalOpen(false)}>

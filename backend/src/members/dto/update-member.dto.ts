@@ -1,13 +1,25 @@
-import { Gender, MemberStatus } from '@prisma/client';
+import { Gender, MemberStatus, MaritalStatus, BaptismStatus } from '@prisma/client';
 
 export class UpdateMemberDto {
   firstName?: string;
+  middleName?: string;
   lastName?: string;
-  phone?: string;
-  email?: string;
-  age?: number;
   gender?: Gender;
-  address?: string;
-  photo?: string;
+  birthDate?: Date;
+  phone?: string;
+  alternativePhone?: string;
+  email?: string;
+  city?: string;
+  subCity?: string;
+  woreda?: string;
+  houseNumber?: string;
+  joinedDate?: Date;
+  salvationDate?: Date;
+  baptismStatus?: BaptismStatus;
   status?: MemberStatus;
+  inactiveReason?: string;
+  maritalStatus?: MaritalStatus;
+  previousChurch?: string;
+  notes?: string;
+  photo?: string;
 }

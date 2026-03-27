@@ -1,6 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { TitheType } from '@prisma/client';
+import { TitheType, Tithe } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+// Reusable aggregation helper
+function sumTithes(tithes: Tithe[]) {
+  const total = tithes.reduce((s, t) => s + Number(t.amount), 0);
+  const named = tithes.filter((t) => t.type === TitheType.NAMED).reduce((s, t) => s + Number(t.amount), 0);
+  return { total, named, anonymous: total - named, count: tithes.length };
+}
 
 @Injectable()
 export class TitheService {
@@ -115,23 +122,9 @@ export class TitheService {
     const end = new Date(year, month, 0, 23, 59, 59);
 
     const tithes = await this.prisma.tithe.findMany({
-      where: {
-        date: { gte: start, lte: end },
-      },
+      where: { date: { gte: start, lte: end } },
     });
-
-    const total = tithes.reduce((sum, t) => sum + Number(t.amount), 0);
-    const named = tithes.filter((t) => t.type === TitheType.NAMED).reduce((sum, t) => sum + Number(t.amount), 0);
-    const anonymous = tithes.filter((t) => t.type === TitheType.ANONYMOUS).reduce((sum, t) => sum + Number(t.amount), 0);
-
-    return {
-      year,
-      month,
-      total,
-      named,
-      anonymous,
-      count: tithes.length,
-    };
+    return { year, month, ...sumTithes(tithes) };
   }
 
   async getYearlyTotal(year: number) {
@@ -139,37 +132,14 @@ export class TitheService {
     const end = new Date(year, 11, 31, 23, 59, 59);
 
     const tithes = await this.prisma.tithe.findMany({
-      where: {
-        date: { gte: start, lte: end },
-      },
+      where: { date: { gte: start, lte: end } },
     });
-
-    const total = tithes.reduce((sum, t) => sum + Number(t.amount), 0);
-    const named = tithes.filter((t) => t.type === TitheType.NAMED).reduce((sum, t) => sum + Number(t.amount), 0);
-    const anonymous = tithes.filter((t) => t.type === TitheType.ANONYMOUS).reduce((sum, t) => sum + Number(t.amount), 0);
-
-    return {
-      year,
-      total,
-      named,
-      anonymous,
-      count: tithes.length,
-    };
+    return { year, ...sumTithes(tithes) };
   }
 
   async getAllTimeStats() {
     const tithes = await this.prisma.tithe.findMany();
-
-    const total = tithes.reduce((sum, t) => sum + Number(t.amount), 0);
-    const named = tithes.filter((t) => t.type === TitheType.NAMED).reduce((sum, t) => sum + Number(t.amount), 0);
-    const anonymous = tithes.filter((t) => t.type === TitheType.ANONYMOUS).reduce((sum, t) => sum + Number(t.amount), 0);
-
-    return {
-      total,
-      named,
-      anonymous,
-      count: tithes.length,
-    };
+    return sumTithes(tithes);
   }
 
   async getTopContributors(limit: number = 10) {
@@ -209,17 +179,6 @@ export class TitheService {
 
   async getFoundationClassStats(foundationClassId: number) {
     const tithes = await this.getTithesByFoundationClass(foundationClassId);
-    const total = tithes.reduce((sum, t) => sum + Number(t.amount), 0);
-    const named = tithes.filter((t) => t.type === TitheType.NAMED).reduce((sum, t) => sum + Number(t.amount), 0);
-    const anonymous = tithes.filter((t) => t.type === TitheType.ANONYMOUS).reduce((sum, t) => sum + Number(t.amount), 0);
-
-    return {
-      foundationClassId,
-      total,
-      named,
-      anonymous,
-      count: tithes.length,
-      tithes,
-    };
+    return { foundationClassId, ...sumTithes(tithes), tithes };
   }
 }

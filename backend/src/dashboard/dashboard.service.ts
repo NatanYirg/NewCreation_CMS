@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { MemberStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -8,44 +9,57 @@ export class DashboardService {
   // --- Admin Dashboard ---
 
   async getAdminDashboard() {
+    const now = new Date();
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
     const [
-      totalUsers,
       totalMembers,
-      totalLeaders,
-      totalFoundationClasses,
-      totalDepartments,
       activeMembers,
-      inactiveMembers,
-      totalTithe,
+      totalFoundationClasses,
+      baptizedThisYear,
+      monthlyTithes,
     ] = await Promise.all([
-      this.prisma.user.count(),
       this.prisma.member.count(),
-      this.prisma.foundationClassLeader.count(),
-      this.prisma.foundationClass.count(),
-      this.prisma.department.count(),
       this.prisma.member.count({ where: { status: 'ACTIVE' } }),
-      this.prisma.member.count({ where: { status: 'INACTIVE' } }),
-      this.prisma.tithe.aggregate({ _sum: { amount: true } }),
+      this.prisma.foundationClass.count(),
+      this.prisma.baptismMember.count({ where: { baptizedAt: { gte: yearStart } } }),
+      this.prisma.tithe.aggregate({
+        where: { date: { gte: monthStart, lte: monthEnd } },
+        _sum: { amount: true },
+      }),
     ]);
 
-    const weeklyAttendance = await this.getWeeklyAttendanceSummary();
-    const monthlyTithe = await this.getMonthlyTitheSummary();
+    // Last 6 months tithe totals for bar chart
+    const monthlyChart = await Promise.all(
+      Array.from({ length: 6 }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+        const start = new Date(d.getFullYear(), d.getMonth(), 1);
+        const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+        return this.prisma.tithe
+          .aggregate({ where: { date: { gte: start, lte: end } }, _sum: { amount: true } })
+          .then((r) => ({
+            month: d.toLocaleString('default', { month: 'short' }),
+            total: Number(r._sum.amount || 0),
+          }));
+      }),
+    );
+
+    const recentMembers = await this.prisma.member.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { id: true, firstName: true, middleName: true, lastName: true, status: true, createdAt: true, photo: true },
+    });
 
     return {
-      overview: {
-        totalUsers,
-        totalMembers,
-        totalLeaders,
-        totalFoundationClasses,
-        totalDepartments,
-        activeMembers,
-        inactiveMembers,
-      },
-      financials: {
-        totalTithe: totalTithe._sum.amount || 0,
-      },
-      attendance: weeklyAttendance,
-      tithe: monthlyTithe,
+      totalMembers,
+      activeMembers,
+      totalFoundationClasses,
+      baptizedThisYear,
+      monthlyOffering: Number(monthlyTithes._sum.amount || 0),
+      monthlyChart,
+      recentMembers,
     };
   }
 
@@ -61,7 +75,7 @@ export class DashboardService {
           teachers: { include: { member: true } },
         },
       }),
-      this.prisma.foundationClassMember.count({ where: { foundationClassId } }),
+      this.prisma.foundationClassMember.count({ where: { foundationClassId, isActive: true } }),
       this.prisma.foundationClassLeader.count({ where: { foundationClassId } }),
       this.prisma.foundationClassTeacher.count({ where: { foundationClassId } }),
       this.prisma.attendanceSession.count({ where: { foundationClassId } }),
@@ -182,25 +196,13 @@ export class DashboardService {
     const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
     const tithes = await this.prisma.tithe.findMany({
-      where: {
-        date: { gte: monthStart, lte: monthEnd },
-      },
+      where: { date: { gte: monthStart, lte: monthEnd } },
     });
-
-    const total = tithes.reduce((sum, t) => sum + Number(t.amount), 0);
-    const named = tithes
-      .filter((t) => t.type === 'NAMED')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    const anonymous = tithes
-      .filter((t) => t.type === 'ANONYMOUS')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-
+    const total = tithes.reduce((s, t) => s + Number(t.amount), 0);
+    const named = tithes.filter((t) => t.type === 'NAMED').reduce((s, t) => s + Number(t.amount), 0);
     return {
       month: today.toLocaleString('default', { month: 'long', year: 'numeric' }),
-      total,
-      named,
-      anonymous,
-      count: tithes.length,
+      total, named, anonymous: total - named, count: tithes.length,
     };
   }
 
@@ -209,47 +211,25 @@ export class DashboardService {
     const end = new Date(endDate);
 
     const tithes = await this.prisma.tithe.findMany({
-      where: {
-        date: { gte: start, lte: end },
-      },
+      where: { date: { gte: start, lte: end } },
     });
-
-    const total = tithes.reduce((sum, t) => sum + Number(t.amount), 0);
-    const named = tithes
-      .filter((t) => t.type === 'NAMED')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    const anonymous = tithes
-      .filter((t) => t.type === 'ANONYMOUS')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-
-    return {
-      startDate,
-      endDate,
-      total,
-      named,
-      anonymous,
-      count: tithes.length,
-    };
+    const total = tithes.reduce((s, t) => s + Number(t.amount), 0);
+    const named = tithes.filter((t) => t.type === 'NAMED').reduce((s, t) => s + Number(t.amount), 0);
+    return { startDate, endDate, total, named, anonymous: total - named, count: tithes.length };
   }
 
   // --- Member Statistics ---
 
   async getMemberStatistics() {
-    const [total, active, inactive, deceased, leftChurch] = await Promise.all([
+    const [total, active, inactive, deceased, left] = await Promise.all([
       this.prisma.member.count(),
       this.prisma.member.count({ where: { status: 'ACTIVE' } }),
       this.prisma.member.count({ where: { status: 'INACTIVE' } }),
       this.prisma.member.count({ where: { status: 'DECEASED' } }),
-      this.prisma.member.count({ where: { status: 'LEFT_CHURCH' } }),
+      this.prisma.member.count({ where: { status: 'LEFT' } }),
     ]);
 
-    return {
-      total,
-      active,
-      inactive,
-      deceased,
-      leftChurch,
-    };
+    return { total, active, inactive, deceased, left };
   }
 
   // --- Foundation Class Statistics ---

@@ -6,7 +6,7 @@ export class FoundationClassesController {
   constructor(private readonly service: FoundationClassesService) {}
 
   @Post()
-  create(@Body() body: any) {
+  create(@Body() body: { name: string; level: number }) {
     return this.service.create(body);
   }
 
@@ -21,7 +21,7 @@ export class FoundationClassesController {
   }
 
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() body: { name?: string; level?: number }) {
     return this.service.update(id, body);
   }
 
